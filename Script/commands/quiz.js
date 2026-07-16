@@ -2,7 +2,7 @@ const axios = require("axios");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const CONFIG_URL = "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json";
+const CONFIG_URL = "https://gitlab.com/shahadat-sahu/sahu-api/-/raw/main/API.json";
 
 module.exports.config = {
   name: "quiz",

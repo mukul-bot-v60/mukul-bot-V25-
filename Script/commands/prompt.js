@@ -13,7 +13,7 @@ module.exports.config = {
 };
 
 const API_HUB =
-  "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/main/SAHU-API.json";
+  "https://gitlab.com/shahadat-sahu/sahu-api/-/raw/main/API.json";
 
 const LANGS = ["en","bn","hi","id","fr","de","ja","ru","pt","ar","ko","it","nl","tr","pl","vi","th"];
 

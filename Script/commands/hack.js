@@ -1,71 +1,125 @@
-const axios = require("axios");
-const fs = require("fs-extra");
-const path = require("path");
-
 module.exports.config = {
-  name: "hack",
-  version: "1.0.0",
-  credits: "SHAHADAT SAHU",
-  description: "Generate a couple banner image using sender and target Facebook UID via Avatar Canvas API",
-  commandCategory: "banner",
-  usePrefix: true,
-  usages: "[@mention | reply]"
+    name: "hack",
+    version: "1.0.0",
+    hasPermssion: 0,
+    credits: "SHAHADAT SAHU",
+    description: "experts",
+    commandCategory: "Fun",
+    usages: "tag or reply",
+    cooldowns: 0,
+    usePrefix: true
 };
 
-module.exports.run = async function ({ event, api }) {
-  const { threadID, messageID, senderID, mentions, messageReply } = event;
+module.exports.languages = {
+    hacked: "এই আইডিটা হ্যাক করা হলো 😽✔️",
+    needTarget: "দয়া করে কাউকে reply বা mention করুন......",
+    error: "কিছু একটা সমস্যা হয়েছে।"
+};
 
-  let targetID = null;
+module.exports.wrapText = async (ctx, text, maxWidth) => {
+    if (ctx.measureText(text).width < maxWidth) return [text];
+    if (ctx.measureText("W").width > maxWidth) return null;
 
-  if (mentions && Object.keys(mentions).length > 0) {
-    targetID = Object.keys(mentions)[0];
-  } else if (messageReply && messageReply.senderID) {
-    targetID = messageReply.senderID;
-  }
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
 
-  if (!targetID) {
-    return api.sendMessage("Please reply or mention someone......", threadID, messageID);
-  }
+    while (words.length) {
+        while (ctx.measureText(words[0]).width >= maxWidth) {
+            const tmp = words[0];
+            words[0] = tmp.slice(0, -1);
+            words.splice(1, 0, tmp.slice(-1));
+        }
 
-  try {
-    const apiList = await axios.get(
-      "https://raw.githubusercontent.com/shahadat-sahu/SAHU-API/refs/heads/main/SAHU-API.json"
-    );
+        if (ctx.measureText(line + words[0]).width < maxWidth) {
+            line += words.shift() + " ";
+        } else {
+            lines.push(line.trim());
+            line = "";
+        }
 
-    const AVATAR_CANVAS_API = apiList.data.AvatarCanvas;
+        if (!words.length) lines.push(line.trim());
+    }
 
-    const res = await axios.post(
-      `${AVATAR_CANVAS_API}/api`,
-      {
-        cmd: "hack",
-        senderID,
-        targetID
-      },
-      {
-        responseType: "arraybuffer",
-        timeout: 30000
-      }
-    );
+    return lines;
+};
 
-    const imgPath = path.join(
-      __dirname,
-      "cache",
-      `hack_${senderID}_${targetID}.png`
-    );
+module.exports.run = async function ({ api, event, Users }) {
+    const { createCanvas, loadImage } = require("canvas");
+    const fs = global.nodemodule["fs-extra"];
+    const axios = global.nodemodule.axios;
 
-    fs.writeFileSync(imgPath, res.data);
+    try {
+        let targetID;
+        if (event.type === "message_reply") {
+            targetID = event.messageReply.senderID;
+        } else if (Object.keys(event.mentions).length) {
+            targetID = Object.keys(event.mentions)[0];
+        }
 
-    return api.sendMessage(
-      {
-        body: "তোর আইডি হ্যাক করা হলো ✅",
-        attachment: fs.createReadStream(imgPath)
-      },
-      threadID,
-      () => fs.unlinkSync(imgPath),
-      messageID
-    );
+        if (!targetID) {
+            return api.sendMessage(
+                module.exports.languages.needTarget,
+                event.threadID,
+                event.messageID
+            );
+        }
 
-  } catch (e) {
-    return api.sendMessage("API Error Call Boss SAHU", threadID, messageID);
-  }
+        const name = await Users.getNameUser(targetID);
+
+        fs.ensureDirSync(__dirname + "/cache");
+
+        const bgPath = `${__dirname}/cache/bg_${event.senderID}.png`;
+        const avPath = `${__dirname}/cache/avt_${targetID}.png`;
+
+        const bgUrl = "https://drive.google.com/uc?id=1_S9eqbx8CxMMxUdOfATIDXwaKWMC-8ox&export=download";
+
+        const avatar = await axios.get(
+            `https://graph.facebook.com/${targetID}/picture?width=512&height=512`,
+            { responseType: "arraybuffer" }
+        );
+
+        const bg = await axios.get(bgUrl, { responseType: "arraybuffer" });
+
+        fs.writeFileSync(avPath, Buffer.from(avatar.data));
+        fs.writeFileSync(bgPath, Buffer.from(bg.data));
+
+        const background = await loadImage(bgPath);
+        const avatarImg = await loadImage(avPath);
+
+        const canvas = createCanvas(background.width, background.height);
+        const ctx = canvas.getContext("2d");
+
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(avatarImg, 57, 290, 66, 68);
+
+        ctx.font = "400 23px Arial";
+        ctx.fillStyle = "#1878F3";
+        ctx.textAlign = "start";
+
+        const lines = await module.exports.wrapText(ctx, name, 1160);
+        ctx.fillText(lines.join("\n"), 136, 335);
+
+        const buffer = canvas.toBuffer();
+        fs.writeFileSync(bgPath, buffer);
+        fs.removeSync(avPath);
+
+        return api.sendMessage(
+            {
+                body: module.exports.languages.hacked,
+                attachment: fs.createReadStream(bgPath)
+            },
+            event.threadID,
+            () => fs.unlinkSync(bgPath),
+            event.messageID
+        );
+
+    } catch (err) {
+        console.error(err);
+        return api.sendMessage(
+            module.exports.languages.error,
+            event.threadID,
+            event.messageID
+        );
+    }
 };

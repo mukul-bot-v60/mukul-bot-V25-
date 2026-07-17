@@ -1,93 +1,28 @@
-npm install
-npm start
-```---
+name: Node.js CI
 
-# 📜 About Developer
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-| Information | Details |
-|-------------|---------|
-| 👤 Name | SAJIB |
-| 💻 Profession | CHAT BOT DEVELOPER |
-| 🌍 Country | Bangladesh |
-| 📂 GitHub | https://github.com/suchi9900/SAJIB---2 |
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
----
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-# 📞 Contact
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-## Facebook
+      - name: Install Dependencies
+        run: npm install
 
-https://www.facebook.com/share/18w4eMJWWo/
-
-## WhatsApp
-
-https://wa.me/8801922847973
-
----
-
-# 🚀 Bot Features
-
-✅ Messenger Multi Device
-
-✅ AI Chat
-
-✅ GPT Commands
-
-✅ Image Generator
-
-✅ Photo Editor
-
-✅ Video Downloader
-
-✅ TikTok Downloader
-
-✅ Facebook Downloader
-
-✅ YouTube Downloader
-
-✅ Pinterest Search
-
-✅ Google Search
-
-✅ Anime Commands
-
-✅ Fun Commands
-
-✅ Group Management
-
-✅ Anti Unsend
-
-✅ Auto React
-
-✅ Auto Seen
-
-✅ Auto Reply
-
-✅ Welcome & Leave Message
-
-✅ Economy System
-
-✅ Games
-
-✅ Bank System
-
-✅ Owner Commands
-
-✅ Admin Panel
-
-✅ Custom Prefix
-
-✅ Custom Events
-
----
-
-# 📥 Installation
-
-```bash
-git clone https://github.com/suchi9900/SAJIB---2.git
-
-cd SAJIB---2
-
-npm install
-
-npm start
+      - name: Start Bot
+        run: npm start
